@@ -24,3 +24,5 @@ Tool creation.
 Newtonsoft.Json package, licensed under MIT. https://github.com/JamesNK/Newtonsoft.Json/
 #### Icon
 https://github.com/feathericons/feather#feather
+
+Contact me on Discord for faster help: Froody#0001
