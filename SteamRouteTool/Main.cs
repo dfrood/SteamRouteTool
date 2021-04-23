@@ -47,16 +47,17 @@ namespace SteamRouteTool
 
             foreach (KeyValuePair<string, JToken> rc in (JObject)jObj["pops"])
             {
-                if (rc.Value.ToString().Contains("relay_addresses") && !rc.Value.ToString().Contains("cloud-test"))
+                if (rc.Value.ToString().Contains("relays") && !rc.Value.ToString().Contains("cloud-test"))
                 {
                     Route route = new Route();
                     route.name = rc.Key;
                     if (rc.Value.ToString().Contains("\"desc\"")) { route.desc = rc.Value["desc"].ToString(); }
-                    route.ranges = new List<string>();
+                    route.ranges = new Dictionary<string, string>();
                     route.row_index = new List<int>();
-                    foreach (string range in rc.Value["relay_addresses"])
+                    foreach (JObject range in rc.Value["relays"])
                     {
-                        route.ranges.Add(range.Split(':')[0]);
+                        Console.WriteLine(range["port_range"][0].ToString() + "-" + range["port_range"][1].ToString());
+                        route.ranges.Add(range["ipv4"].ToString(), range["port_range"].ToString());
                         route.row_index.Add(rowCount);
                         rowCount++;
                     }
@@ -128,7 +129,7 @@ namespace SteamRouteTool
                 for (int i = 0; i < route.ranges.Count; i++)
                 {
                     routeDataGrid.Rows[route.row_index[i]].Cells[1].Style.BackColor = Color.Black;
-                    string responseTime = PingHost(route.ranges[i]);
+                    string responseTime = PingHost(route.ranges.Keys.ToArray()[i]);
                     if (responseTime != "-1")
                     {
                         if (Convert.ToInt32(responseTime) <= 50) { routeDataGrid.Rows[route.row_index[i]].Cells[1].Style.ForeColor = Color.Green; }
@@ -156,7 +157,7 @@ namespace SteamRouteTool
                     for (int i = 0; i < route.ranges.Count; i++)
                     {
                         routeDataGrid.Rows[route.row_index[i]].Cells[1].Style.BackColor = Color.Black;
-                        string responseTime = PingHost(route.ranges[i]);
+                        string responseTime = PingHost(route.ranges.Keys.ToArray()[i]);
                         if (responseTime != "-1")
                         {
                             if (Convert.ToInt32(responseTime) <= 50) { routeDataGrid.Rows[route.row_index[i]].Cells[1].Style.ForeColor = Color.Green; }
@@ -210,7 +211,7 @@ namespace SteamRouteTool
                             int blockedCount = 0;
                             for (int i = 0; i < route.ranges.Count; i++)
                             {
-                                if (addr.Contains(route.ranges[i]))
+                                if (addr.Contains(route.ranges.Keys.ToArray()[i]))
                                 {
                                     routeDataGrid.Rows[route.row_index[i]].Cells[2].Value = true;
                                     if (i != 0) { blockedCount++;  }
@@ -294,7 +295,7 @@ namespace SteamRouteTool
                         if (currentRoute.row_index[i] == e.RowIndex)
                         {
                             routeDataGrid.Rows[e.RowIndex].Cells[1].Style.BackColor = Color.Black;
-                            string responseTime = PingHost(currentRoute.ranges[i]);
+                            string responseTime = PingHost(currentRoute.ranges.Keys.ToArray()[i]);
 
                             if (responseTime != "-1")
                             {
@@ -380,15 +381,15 @@ namespace SteamRouteTool
                 {
                     if (index == 0 && route.all_check)
                     {
-                        foreach (string range in route.ranges)
+                        foreach (KeyValuePair<string,string> range in route.ranges)
                         {
-                            remoteAddresses += range + ",";
+                            remoteAddresses += range.Key + ",";
                         }
                         break;
                     }
                     else
                     {
-                        remoteAddresses += route.ranges[index] + ",";
+                        remoteAddresses += route.ranges.Keys.ToArray()[index] + ",";
                     }
                 }
                 index++;
