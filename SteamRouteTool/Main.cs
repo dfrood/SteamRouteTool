@@ -20,7 +20,7 @@ namespace SteamRouteTool
         int rowCount = 0;
         bool columnChecked = false;
         bool firstLoad = true;
-        string networkconfigURL = @"https://steamcdn-a.akamaihd.net/apps/sdr/network_config.json";
+        string networkconfigURL = @"https://api.steampowered.com/ISteamApps/GetSDRConfig/v1?appid=730";
 
         public Main()
         {
