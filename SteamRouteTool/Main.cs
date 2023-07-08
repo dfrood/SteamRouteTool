@@ -198,7 +198,7 @@ namespace SteamRouteTool
             {
                 if (rule.Name.Contains("SteamRouteTool-"))
                 {
-                    string name = rule.Name.Split('-')[1];
+                    string name = rule.Name.Split('-')[2];
 
                     List<string> addr = new List<string>();
                     foreach (string tosplit in rule.RemoteAddresses.Split(',')) { addr.Add(tosplit.Split('/')[0]); }
@@ -363,14 +363,14 @@ namespace SteamRouteTool
         {
             Type tNetFwPolicy2 = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
             INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(tNetFwPolicy2);
-            try { fwPolicy2.Rules.Remove("SteamRouteTool-" + route.name); }
+            try 
+            { 
+                fwPolicy2.Rules.Remove("SteamRouteTool-TCP-" + route.name);
+                fwPolicy2.Rules.Remove("SteamRouteTool-UDP-" + route.name);
+                fwPolicy2.Rules.Remove("SteamRouteTool-ICMP-" + route.name);
+            }
             catch { }
-
-            INetFwRule fwRule = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
-
-            fwRule.Enabled = true;
-            fwRule.Direction = NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT;
-            fwRule.Action = NET_FW_ACTION_.NET_FW_ACTION_BLOCK;
+          
 
             string remoteAddresses = "";
 
@@ -397,12 +397,40 @@ namespace SteamRouteTool
             if (remoteAddresses != "")
             {
                 remoteAddresses = remoteAddresses.Substring(0, remoteAddresses.Length - 1);
-                fwRule.RemoteAddresses = remoteAddresses;
-                fwRule.Protocol = 17;
-                fwRule.RemotePorts = "27015-27068";
-                fwRule.Name = "SteamRouteTool-" + route.name;
+
+                INetFwRule2 udpRule = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                udpRule.Enabled = true;
+                udpRule.Direction = NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT;
+                udpRule.Action = NET_FW_ACTION_.NET_FW_ACTION_BLOCK;
+                udpRule.RemoteAddresses = remoteAddresses;
+                udpRule.Protocol = 17; // UDP protocol
+                udpRule.RemotePorts = "27015-27068";
+                udpRule.Name = "SteamRouteTool-UDP-" + route.name;
+
+                // Create TCP rule
+                INetFwRule2 tcpRule = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                tcpRule.Enabled = true;
+                tcpRule.Direction = NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT;
+                tcpRule.Action = NET_FW_ACTION_.NET_FW_ACTION_BLOCK;
+                tcpRule.RemoteAddresses = remoteAddresses;
+                tcpRule.Protocol = 6; // TCP protocol
+                tcpRule.RemotePorts = "27015-27068";
+                tcpRule.Name = "SteamRouteTool-TCP-" + route.name;
+
+                // Create ICMP rule
+                INetFwRule2 icmpRule = (INetFwRule2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FWRule"));
+                icmpRule.Enabled = true;
+                icmpRule.Direction = NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT;
+                icmpRule.Action = NET_FW_ACTION_.NET_FW_ACTION_BLOCK;
+                icmpRule.RemoteAddresses = remoteAddresses;
+                icmpRule.Name = "SteamRouteTool-ICMP-" + route.name;
+                icmpRule.Protocol = 1; // ICMP protocol
+
+                // Add rules to the firewall policy
                 INetFwPolicy2 firewallPolicy = (INetFwPolicy2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FwPolicy2"));
-                firewallPolicy.Rules.Add(fwRule);
+                firewallPolicy.Rules.Add(udpRule);
+                firewallPolicy.Rules.Add(tcpRule);
+                firewallPolicy.Rules.Add(icmpRule);
             }
         }
 
